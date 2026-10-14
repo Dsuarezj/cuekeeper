@@ -111,10 +111,12 @@ export async function boot(): Promise<void> {
     const list = $('playlist-list');
     list.innerHTML = '';
     for (const p of pls?.items ?? []) {
+      if (!p) continue;
       const b = document.createElement('button');
       b.className = 'plist';
-      b.textContent = `${p.name} (${p.tracks.total})`;
-      b.addEventListener('click', () => loadCuts(p.id, p.name));
+      const total = p.tracks?.total;
+      b.textContent = `${p.name ?? '(sin nombre)'}${total != null ? ` (${total})` : ''}`;
+      b.addEventListener('click', () => loadCuts(p.id, p.name ?? 'playlist'));
       list.appendChild(b);
     }
     if (!list.children.length) $('choose-msg').textContent = 'No se encontraron playlists.';
@@ -142,7 +144,7 @@ async function loadCuts(playlistId: string, playlistName: string): Promise<void>
       tr.dataset.trackId = t.id;
       tr.innerHTML = `
         <td class="n">${idx + 1}</td>
-        <td><strong>${escapeHtml(t.name)}</strong><br><span class="dim">${escapeHtml(artist)}</span></td>
+        <td><strong>${escapeHtml(t.name ?? '?')}</strong><br><span class="dim">${escapeHtml(artist)}</span></td>
         <td><input type="number" min="0" inputmode="numeric" placeholder="0:00"
              value="${g.start ?? ''}" data-k="start" aria-label="empieza en segundos"></td>
         <td><input type="number" min="0" inputmode="numeric" placeholder="fin"
