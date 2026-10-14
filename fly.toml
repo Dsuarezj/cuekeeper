@@ -1,0 +1,23 @@
+# Ero · cortes — Fly.io
+# Si el nombre "ero-cuts" está ocupado, cámbialo aquí (y en la Redirect URI de Spotify).
+app = "ero-cuts"
+primary_region = "lhr" # Londres: ahí es la noche del 14 de noviembre
+
+[build]
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # ¡Importante! La máquina NO debe dormirse: el vigilante hace polling cada segundo.
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+# Volumen para tokens + estado (así sobrevive a reinicios y se reanuda solo).
+# Crear con: fly volumes create ero_cuts_data --size 1 --region lhr
+[[mounts]]
+  source = "ero_cuts_data"
+  destination = "/data"
+
+[[vm]]
+  size = "shared-cpu-1x"

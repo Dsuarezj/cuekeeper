@@ -1,61 +1,72 @@
 # Ero · cortes
 
-Astro 100% estático en Vercel. Spotify pone la música y las transiciones (Mix);
-esta página pone los cortes: vigila la reproducción cada segundo y ordena
-`saltar a` / `siguiente` cuando toca. Sin backend, sin coste.
+Spotify pone la música y las transiciones (Mix); esto pone los cortes quirúrgicos
+que el editor de Spotify no permite: Ciudad de la Furia → 6:15, Levensgenieter →
+5:15, Ass Like That → 1:50–2:30, Roads → 4:40.
 
-## Cómo desplegarlo (5 minutos, desde tu Mac)
+## El vigilante (activo): `server/` en Fly.io
 
-1. **Spotify Client ID** (gratis):
-   - Entra en <https://developer.spotify.com/dashboard> e inicia sesión.
-   - *Create app* → nombre: `ero-cuts` → *Save*.
-   - En *Settings*, en **Redirect URIs**, añade la URL de tu despliegue
-     (la verás en el paso 3, termina en `/`, p. ej. `https://ero-cuts.vercel.app/`)
-     y pulsa *Save*. Anota el **Client ID**.
+Backend always-on: pregunta a la API de Spotify cada segundo en qué punto va la
+canción y dispara `seek`/`next` cuando toca. El móvil solo reproduce; no hay que
+dejar ninguna página abierta.
 
-2. **Despliega en Vercel** (cuenta gratuita):
-   - Descomprime este proyecto en tu Mac, abre un terminal en la carpeta:
-     ```
-     npm install -g vercel
-     vercel --prod
-     ```
-   - Acepta los valores por defecto. Al terminar te da la URL pública.
+OAuth con PKCE (solo hace falta el Client ID). Los tokens y el estado viven en
+el volumen `/data`: si la máquina se reinicia a mitad de la noche, **se reanuda
+sola**.
 
-3. **Conecta las dos piezas**: vuelve al paso 1 y registra la URL de Vercel
-   como Redirect URI en tu app de Spotify (si no lo hiciste antes).
+### Despliegue (una vez)
 
-4. **En tu Pixel**: abre la URL, pega el Client ID, conecta Spotify, elige la
-   playlist *Ero*, revisa que los 4 cortes estén bien (vienen pre-rellenados)
-   y pulsa **Empezar la noche**.
+```bash
+fly auth login
+cd ero-cuts
+fly launch --no-deploy        # usa el fly.toml (cambia el nombre si está ocupado)
+fly volumes create ero_cuts_data --size 1 --region lhr
+fly secrets set SPOTIFY_CLIENT_ID=tu_client_id
+```
 
-## La noche del 14
+En <https://developer.spotify.com/dashboard> → tu app → *Redirect URIs* añade:
 
-- En Spotify, activa el **Mix** en la playlist y dale play.
-- Deja esta página abierta **en primer plano** con el móvil **enchufado**.
-- La página mantiene la pantalla encendida (Wake Lock) y registra cada corte.
-- Si la página se cerrara, la música sigue sonando: solo se pierden los cortes.
+```
+https://TU-APP.fly.dev/auth/callback
+```
 
-## Probarlo antes
+```bash
+fly deploy
+```
 
-- En local: `npm run dev` → <http://localhost:4321/> (registra también
-  `http://localhost:4321/` como Redirect URI para probar).
-- Prueba real: dale play a la playlist un día cualquiera y mira el registro
-  de la página: los cortes deben caer en 6:15 (Ciudad), 5:15 (Levensgenieter),
-  1:50→2:30 (Ass Like That) y 4:40 (Roads).
+Abre `https://TU-APP.fly.dev`, conecta Spotify, elige la playlist *Ero* y pulsa
+vigilar. Esa noche: dale play en Spotify (con el Mix activado) y olvídate.
 
-## Cortes preconfigurados (editables en la página, en segundos)
+### Notas
+
+- `fly.toml` lleva `auto_stop_machines = false` y `min_machines_running = 1`:
+  la máquina no se duerme nunca (cabe en el tier gratuito; vigila tu uso).
+- Región `lhr` (Londres). Si cambias la región, crea el volumen allí también.
+- Telemetría: este backend no envía ninguna. (Astro sí intentaba la suya en
+  builds; desactivada con `astro telemetry disable` y
+  `ASTRO_TELEMETRY_DISABLED=1`.)
+
+## Versión anterior (archivada): app web Astro en Vercel
+
+Los archivos de la primera versión (Astro 100% estático, vigilante en el
+navegador con la página en primer plano) siguen en la raíz del repo
+(`src/`, `astro.config.mjs`, `package.json`…), pero ya no se despliegan:
+el backend la sustituye porque funciona con el móvil bloqueado.
+
+### Cortes preconfigurados
 
 | Tema | Empieza | Termina |
 |---|---|---|
-| En la Ciudad de la Furia | — | 375 (6:15) |
-| Levensgenieter | — | 315 (5:15) |
-| Ass Like That | 110 (1:50) | 150 (2:30) |
-| Roads | — | 280 (4:40) |
+| En la Ciudad de la Furia | — | 375 s (6:15) |
+| Levensgenieter | — | 315 s (5:15) |
+| Ass Like That | 110 s (1:50) | 150 s (2:30) |
+| Roads | — | 280 s (4:40) |
 
-## Notas técnicas
+### Detalles técnicos
 
-- OAuth: Authorization Code + PKCE, todo en el navegador. Tokens en
-  `localStorage`; refresco automático.
 - Scopes: `user-read-playback-state`, `user-modify-playback-state`,
   `playlist-read-private`.
 - Precisión de corte: ±1 s (polling cada segundo a `/me/player`).
+- Desde la migración de la API de Spotify (feb-2026): los temas de una
+  playlist se leen con `GET /playlists/{id}/items` (el viejo `/tracks`
+  devuelve 403 en apps en desarrollo) y el objeto anidado es `item`.

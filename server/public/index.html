@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0d0d12" />
+<title>Ero · vigilante</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0d0d12; color: #f2f2f5;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    min-height: 100dvh; padding: 20px 16px 48px; }
+  main { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  p.sub { color: #a7a7b3; margin: 0 0 18px; font-size: .95rem; }
+  .hidden { display: none !important; }
+  .card { background: #17171e; border: 1px solid #26262f; border-radius: 14px;
+    padding: 18px; margin-bottom: 14px; }
+  h2 { font-size: 1.05rem; margin: 0 0 10px; }
+  button { background: #7c5cff; color: #fff; border: 0; border-radius: 12px;
+    padding: 14px 18px; font-size: 1rem; font-weight: 600; cursor: pointer;
+    width: 100%; margin-top: 10px; }
+  button.ghost { background: #26262f; }
+  button.plist { background: #1d1d26; text-align: left; margin-top: 8px; font-weight: 500; }
+  button:disabled { opacity: .45; cursor: default; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 99px;
+    background: #55555f; margin-right: 8px; }
+  .dot.on { background: #51e08c; }
+  #now-title { font-size: 1.25rem; margin: 0; }
+  #now-artist { color: #a7a7b3; margin: 2px 0 10px; }
+  .pbar { height: 8px; background: #26262f; border-radius: 99px; overflow: hidden; }
+  #progress { height: 100%; width: 0%; background: #7c5cff; transition: width 1.8s linear; }
+  #now-time { font-size: .82rem; color: #a7a7b3; margin-top: 6px; }
+  #countdown { font-size: 1.05rem; margin: 12px 0 0; color: #ffd479; font-weight: 600; }
+  #log { list-style: none; padding: 0; margin: 12px 0 0; font-size: .85rem; }
+  #log li { padding: 6px 0; border-bottom: 1px solid #1d1d26; color: #cfcfda; }
+  .hint { font-size: .85rem; color: #a7a7b3; }
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  td { padding: 6px 4px; border-bottom: 1px solid #1d1d26; }
+  .dim { color: #a7a7b3; }
+  .msg { color: #ffb3b3; font-size: .9rem; min-height: 1.2em; }
+</style>
+</head>
+<body>
+<main>
+  <h1>✂️ Ero · vigilante</h1>
+  <p class="sub">Vive en la nube. Dale play en Spotify y olvídate: los cortes se hacen solos.</p>
+
+  <div class="card" id="card-auth">
+    <h2><span class="dot" id="auth-dot"></span><span id="auth-label">Comprobando…</span></h2>
+    <button id="btn-connect" class="hidden">Conectar con Spotify</button>
+  </div>
+
+  <div class="card hidden" id="card-playlists">
+    <h2>Elige la playlist a vigilar</h2>
+    <div id="playlist-list"></div>
+    <p class="msg" id="pl-msg"></p>
+  </div>
+
+  <div class="card hidden" id="card-watch">
+    <h2><span class="dot" id="live-dot"></span><span id="watch-label">En espera</span></h2>
+    <p id="now-title">—</p>
+    <p id="now-artist"> </p>
+    <div class="pbar"><div id="progress"></div></div>
+    <p id="now-time"></p>
+    <p id="countdown" class="hidden"></p>
+    <div id="cuts-table-wrap" class="hidden">
+      <h2 style="margin-top:14px">Cortes programados</h2>
+      <table id="cuts-table"></table>
+    </div>
+    <button id="btn-stop" class="ghost">⏹ Detener vigilancia</button>
+  </div>
+
+  <div class="card">
+    <h2>Registro</h2>
+    <ul id="log"></ul>
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const fmt = (ms) => {
+  const s = Math.max(0, Math.round(ms / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+};
+let lastEvents = [];
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || r.status);
+  return j;
+}
+
+function renderLog(events) {
+  lastEvents = events;
+  $('log').innerHTML = events.map((e) => `<li>${e}</li>`).join('');
+}
+
+async function refresh() {
+  try {
+    const st = await api('/api/status');
+    $('auth-dot').classList.toggle('on', st.authed);
+    $('auth-label').textContent = st.authed ? 'Spotify conectado' : 'Sin conectar';
+    $('btn-connect').classList.toggle('hidden', st.authed);
+    $('card-playlists').classList.toggle('hidden', !st.authed || st.watching);
+
+    if (st.watching) {
+      $('card-watch').classList.remove('hidden');
+      $('watch-label').textContent = `Vigilando · ${st.playlistName || ''}`;
+      const c = st.current;
+      if (c) {
+        $('now-title').textContent = c.trackName;
+        $('now-artist').textContent = c.artist || '';
+        $('progress').style.width = c.durationMs
+          ? Math.min(100, (c.progressMs / c.durationMs) * 100) + '%' : '0%';
+        $('now-time').textContent = c.durationMs ? `${fmt(c.progressMs)} / ${fmt(c.durationMs)}` : '';
+        const cd = $('countdown');
+        if (c.nextCutInMs != null && c.nextCutLabel) {
+          cd.textContent = c.nextCutInMs > 0
+            ? `⏳ ${c.nextCutLabel} en ${fmt(c.nextCutInMs)}` : `⚡ ${c.nextCutLabel}…`;
+          cd.classList.remove('hidden');
+        } else cd.classList.add('hidden');
+      } else {
+        $('now-title').textContent = '—';
+        $('now-artist').textContent = 'esperando reproducción…';
+      }
+      $('live-dot').classList.toggle('on', !!(c && c.isPlaying));
+      if (st.cuts?.length) {
+        $('cuts-table-wrap').classList.remove('hidden');
+        $('cuts-table').innerHTML = st.cuts.map((x) =>
+          `<tr><td>${x.name}</td><td class="dim">${x.startMs != null ? 'desde ' + fmt(x.startMs) : ''}</td><td class="dim">${x.endMs != null ? 'hasta ' + fmt(x.endMs) : ''}</td></tr>`
+        ).join('');
+      }
+    } else {
+      $('card-watch').classList.add('hidden');
+      if (st.authed && !$('playlist-list').children.length) loadPlaylists();
+    }
+    renderLog(st.events || []);
+  } catch (e) {
+    $('auth-label').textContent = 'Error: ' + e.message;
+  }
+}
+
+async function loadPlaylists() {
+  try {
+    const pls = await api('/api/playlists');
+    const list = $('playlist-list');
+    list.innerHTML = '';
+    pls.forEach((p) => {
+      const b = document.createElement('button');
+      b.className = 'plist';
+      b.textContent = `${p.name}${p.total != null ? ` (${p.total})` : ''}`;
+      b.onclick = async () => {
+        b.disabled = true;
+        try {
+          const r = await api('/api/start', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ playlistId: p.id }),
+          });
+          alert(`Vigilando ${r.cuts.length} cortes. Dale play a la playlist en Spotify.`);
+        } catch (e) { alert('Error: ' + e.message); }
+        b.disabled = false;
+        refresh();
+      };
+      list.appendChild(b);
+    });
+  } catch (e) { $('pl-msg').textContent = 'Error: ' + e.message; }
+}
+
+$('btn-connect').onclick = () => { window.location.href = '/auth/login'; };
+$('btn-stop').onclick = async () => { await api('/api/stop', { method: 'POST' }); refresh(); };
+
+refresh();
+setInterval(refresh, 2000);
+</script>
+</body>
+</html>
