@@ -1,7 +1,7 @@
 // Lógica de la página: login → elegir playlist → fijar cortes → vigilar.
 
 import {
-  startLogin, exchangeCode, loadTokens, clearAll, lsGet, lsSet,
+  startLogin, exchangeCode, loadTokens, clearAll, lsGet, lsSet, lsDel,
   getPlaylists, getPlaylistTracks, getRedirectUri,
 } from './spotify';
 import { startWatching, fmt, type Cut } from './watcher';
@@ -104,6 +104,19 @@ export async function boot(): Promise<void> {
     return;
   }
 
+  // 1b) Sesión en curso: si se refrescó en mitad de la noche, volver directo a vigilar.
+  const sessRaw = lsGet('session');
+  if (sessRaw) {
+    try {
+      const sess = JSON.parse(sessRaw);
+      if (sess?.cuts?.length) {
+        startNight(sess.playlistId, sess.playlistName ?? 'playlist', sess.cuts);
+        return;
+      }
+    } catch { /* sesión corrupta: seguir con el flujo normal */ }
+    lsDel('session');
+  }
+
   // 2) Elegir playlist
   show('choose');
   try {
@@ -186,7 +199,7 @@ async function loadCuts(playlistId: string, playlistName: string): Promise<void>
         }
       });
       lsSet(`cuts_${playlistId}`, JSON.stringify(store));
-      startNight(cuts);
+      startNight(playlistId, playlistName, cuts);
     };
   } catch (e: any) {
     const msg: string = e.message ?? String(e);
@@ -197,7 +210,9 @@ async function loadCuts(playlistId: string, playlistName: string): Promise<void>
   }
 }
 
-function startNight(cuts: Cut[]): void {
+function startNight(playlistId: string, playlistName: string, cuts: Cut[]): void {
+  // Guardar la sesión: si se refresca la página, se vuelve directo a vigilar.
+  lsSet('session', JSON.stringify({ playlistId, playlistName, cuts }));
   show('watch');
   $('log').innerHTML = '';
   log(`vigilando ${cuts.length} cortes · dale play a la playlist en Spotify`);
@@ -231,8 +246,9 @@ function startNight(cuts: Cut[]): void {
   });
   ($('btn-stop') as HTMLButtonElement).onclick = () => {
     stopWatch?.(); stopWatch = null; releaseAwake();
+    lsDel('session');
     log('⏹ vigilancia detenida');
-    show('cuts');
+    loadCuts(playlistId, playlistName);
   };
 }
 

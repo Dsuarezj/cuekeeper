@@ -29,7 +29,7 @@ function lsDel(key: string): void {
   localStorage.removeItem('cuekeeper_' + key);
   localStorage.removeItem('ero_' + key);
 }
-export { lsGet, lsSet };
+export { lsGet, lsSet, lsDel };
 
 function rand(n: number): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';

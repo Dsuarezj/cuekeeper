@@ -35,6 +35,7 @@
       width: 100%; margin-top: 12px;
     }
     button.ghost { background: #26262f; }
+    .btn-back-top { width: auto; padding: 8px 14px; margin: 0 0 6px; font-size: .88rem; font-weight: 500; }
     #playlist-list { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
     button.plist { margin-top: 0; }
     button.plist {
@@ -124,11 +125,11 @@
   <section id="view-cuts" class="hidden">
     <div class="card">
       <h2 id="cuts-title">3 · Cortes</h2>
+      <button id="btn-back" class="ghost btn-back-top">‹ otra playlist</button>
       <p class="hint">Segundos donde <strong>empieza</strong> y donde <strong>termina</strong> cada tema.
       Vacío = se reproduce entero. Los 4 cortes de la noche vienen pre-rellenados.</p>
       <div id="cuts-body"></div>
       <button id="btn-start">▶ Empezar la noche</button>
-      <button id="btn-back" class="ghost">← otra playlist</button>
     </div>
   </section>
 
