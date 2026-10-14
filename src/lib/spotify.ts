@@ -126,11 +126,18 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T | 
     res = await doFetch();
   }
   if (res.status === 204) return null;
+  const txt = await res.text().catch(() => '');
   if (!res.ok) {
-    const txt = await res.text().catch(() => '');
     throw new Error(`Spotify ${res.status} en ${path} ${txt.slice(0, 120)}`);
   }
-  return (await res.json()) as T;
+  if (!txt) return null; // 200 con cuerpo vacío: nada que leer
+  try {
+    return JSON.parse(txt) as T;
+  } catch {
+    // Respuesta transitoria malformada de Spotify: se trata como fallo
+    // temporal, el vigilante reintenta al segundo siguiente.
+    throw new Error(`transitorio: Spotify devolvió no-JSON en ${path}`);
+  }
 }
 
 export const getState = () => api<any>('/me/player');

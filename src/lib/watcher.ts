@@ -35,6 +35,7 @@ export function startWatching(cuts: Cut[], cb: WatchCallbacks): () => void {
   let lastTrackId: string | null = null;
   let seekDone = false;
   let cutDone = false;
+  let consecutiveErrors = 0;
 
   const cutFor = (id: string | null): Cut | null =>
     cuts.find((c) => c.trackId === id) ?? null;
@@ -92,8 +93,16 @@ export function startWatching(cuts: Cut[], cb: WatchCallbacks): () => void {
         nextCutInMs,
         nextCutLabel,
       });
+      consecutiveErrors = 0;
     } catch (e: any) {
-      cb.onError(e?.message ?? String(e));
+      consecutiveErrors++;
+      // Un fallo aislado (p. ej. una respuesta malformada) se ignora: el
+      // siguiente tick lo reintenta. Solo se avisa si persiste.
+      if (consecutiveErrors === 3) {
+        cb.onError(`⚠️ fallos seguidos consultando a Spotify (${consecutiveErrors}…): ${e?.message ?? String(e)}`);
+      } else if (consecutiveErrors > 3 && consecutiveErrors % 10 === 0) {
+        cb.onError(`⚠️ sigue fallando (${consecutiveErrors} seguidos): ${e?.message ?? String(e)}`);
+      }
     }
   }
 
