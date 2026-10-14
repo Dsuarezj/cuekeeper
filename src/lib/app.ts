@@ -129,15 +129,20 @@ async function loadCuts(playlistId: string, playlistName: string): Promise<void>
   show('cuts');
   $('cuts-title').textContent = `Cortes · ${playlistName}`;
   const tbody = $('cuts-body');
+  const btnStart = $('btn-start') as HTMLButtonElement;
+  const btnBack = $('btn-back') as HTMLButtonElement;
+  // Estos botones tienen que funcionar siempre, también en la pantalla de error.
+  btnBack.onclick = () => show('choose');
+  btnStart.classList.add('hidden');
   tbody.innerHTML = '<tr><td colspan="4">cargando temas…</td></tr>';
   try {
     const data = await getPlaylistTracks(playlistId);
-    const items = (data?.items ?? []).filter((i: any) => i.track?.id);
+    const items = (data?.items ?? []).filter((i: any) => (i.item ?? i.track)?.id);
     const saved = JSON.parse(localStorage.getItem(`ero_cuts_${playlistId}`) ?? '{}');
 
     tbody.innerHTML = '';
     items.forEach((i: any, idx: number) => {
-      const t = i.track;
+      const t = i.item ?? i.track; // /items usa "item"; se tolera el viejo "track"
       const artist = (t.artists ?? []).map((a: any) => a.name).join(', ');
       const g = saved[t.id] ?? guess(t.name);
       const tr = document.createElement('tr');
@@ -152,8 +157,8 @@ async function loadCuts(playlistId: string, playlistName: string): Promise<void>
       tbody.appendChild(tr);
     });
 
-    ($('btn-back') as HTMLButtonElement).onclick = () => show('choose');
-    ($('btn-start') as HTMLButtonElement).onclick = () => {
+    btnStart.classList.remove('hidden');
+    btnStart.onclick = () => {
       const cuts: Cut[] = [];
       const store: Record<string, { start: number | null; end: number | null }> = {};
       tbody.querySelectorAll('tr[data-track-id]').forEach((tr) => {

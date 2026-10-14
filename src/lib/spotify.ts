@@ -138,5 +138,8 @@ export const seek = (ms: number) =>
   api(`/me/player/seek?position_ms=${Math.round(ms)}`, { method: 'PUT' });
 export const nextTrack = () => api('/me/player/next', { method: 'POST' });
 export const getPlaylists = () => api<any>('/me/playlists?limit=50');
+// OJO: desde la migración de la API de Spotify (feb-2026), /playlists/{id}/tracks
+// devuelve 403 para apps en modo desarrollo. El endpoint vigente es /items,
+// con el objeto anidado renombrado de "track" a "item".
 export const getPlaylistTracks = (id: string) =>
-  api<any>(`/playlists/${id}/tracks?limit=100`);
+  api<any>(`/playlists/${id}/items?limit=100`);
