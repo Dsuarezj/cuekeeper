@@ -35,19 +35,32 @@
       width: 100%; margin-top: 12px;
     }
     button.ghost { background: #26262f; }
-    button.plist { background: #1d1d26; text-align: left; margin-top: 8px; }
+    button.plist {
+      display: flex; align-items: center; gap: 10px;
+      background: #1d1d26; border: 1px solid #2c2c38; border-radius: 12px;
+      text-align: left; margin-top: 8px; padding: 14px;
+    }
+    button.plist .pname { flex: 1; font-weight: 600; }
+    button.plist .pcount {
+      font-size: .78rem; color: #a7a7b3; background: #26262f;
+      border-radius: 99px; padding: 4px 10px; white-space: nowrap;
+    }
+    button.plist .pgo { color: #7c5cff; font-size: 1.3rem; line-height: 1; }
     code.uri {
       display: block; background: #0d0d12; border: 1px dashed #44444f;
       border-radius: 8px; padding: 10px; margin: 8px 0; word-break: break-all;
       font-size: .85rem; color: #c9b8ff;
     }
     .msg { min-height: 1.4em; color: #ffb3b3; font-size: .9rem; margin-top: 8px; }
-    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
-    th { text-align: left; color: #a7a7b3; font-weight: 600; font-size: .78rem;
-         padding: 6px 4px; border-bottom: 1px solid #26262f; }
-    td { padding: 8px 4px; border-bottom: 1px solid #1d1d26; vertical-align: middle; }
-    td.n { color: #a7a7b3; width: 2em; }
-    td input { padding: 8px; font-size: .95rem; }
+    .cut {
+      background: #1d1d26; border: 1px solid #2c2c38; border-radius: 12px;
+      padding: 12px; margin-top: 8px;
+    }
+    .cut-head { display: flex; gap: 10px; align-items: baseline; margin-bottom: 10px; }
+    .cut-head .n { color: #a7a7b3; font-size: .85rem; min-width: 1.4em; }
+    .cut-times { display: flex; gap: 10px; }
+    .cut-times label { flex: 1; margin: 0; font-size: .78rem; }
+    .cut-times input { margin-top: 4px; }
     .dim { color: #a7a7b3; font-size: .82rem; }
     #now-title { font-size: 1.25rem; margin: 0; }
     #now-artist { color: #a7a7b3; margin: 2px 0 10px; }
@@ -106,10 +119,7 @@
       <h2 id="cuts-title">3 · Cortes</h2>
       <p class="hint">Segundos donde <strong>empieza</strong> y donde <strong>termina</strong> cada tema.
       Vacío = se reproduce entero. Los 4 cortes de la noche vienen pre-rellenados.</p>
-      <table>
-        <thead><tr><th>#</th><th>Tema</th><th>Empieza&nbsp;(s)</th><th>Termina&nbsp;(s)</th></tr></thead>
-        <tbody id="cuts-body"></tbody>
-      </table>
+      <div id="cuts-body"></div>
       <button id="btn-start">▶ Empezar la noche</button>
       <button id="btn-back" class="ghost">← otra playlist</button>
     </div>

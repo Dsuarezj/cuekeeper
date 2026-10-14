@@ -9,6 +9,28 @@ export interface Tokens {
   expires_at: number;
 }
 
+// Las claves se renombraron de ero_* a cuekeeper_*: al leer se migran solas,
+// así una sesión iniciada con la versión anterior sigue valiendo.
+function lsGet(key: string): string | null {
+  const v = localStorage.getItem('cuekeeper_' + key);
+  if (v != null) return v;
+  const old = localStorage.getItem('ero_' + key);
+  if (old != null) {
+    localStorage.setItem('cuekeeper_' + key, old);
+    localStorage.removeItem('ero_' + key);
+  }
+  return old;
+}
+function lsSet(key: string, value: string): void {
+  localStorage.setItem('cuekeeper_' + key, value);
+  localStorage.removeItem('ero_' + key);
+}
+function lsDel(key: string): void {
+  localStorage.removeItem('cuekeeper_' + key);
+  localStorage.removeItem('ero_' + key);
+}
+export { lsGet, lsSet };
+
 function rand(n: number): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
   const arr = new Uint8Array(n);
@@ -32,8 +54,8 @@ export function getRedirectUri(): string {
 export async function startLogin(clientId: string): Promise<void> {
   const verifier = rand(128);
   const ch = await challenge(verifier);
-  localStorage.setItem('cuekeeper_verifier', verifier);
-  localStorage.setItem('cuekeeper_client_id', clientId);
+  lsSet('verifier', verifier);
+  lsSet('client_id', clientId);
   const params = new URLSearchParams({
     client_id: clientId,
     response_type: 'code',
@@ -52,18 +74,18 @@ function saveTokens(j: any): Tokens {
     refresh_token: j.refresh_token ?? prev?.refresh_token ?? '',
     expires_at: Date.now() + (j.expires_in ?? 3600) * 1000,
   };
-  localStorage.setItem('cuekeeper_tokens', JSON.stringify(t));
+  lsSet('tokens', JSON.stringify(t));
   return t;
 }
 
 export function loadTokens(): Tokens | null {
-  const raw = localStorage.getItem('cuekeeper_tokens');
+  const raw = lsGet('tokens');
   return raw ? (JSON.parse(raw) as Tokens) : null;
 }
 
 export function clearAll(): void {
-  localStorage.removeItem('cuekeeper_tokens');
-  localStorage.removeItem('cuekeeper_verifier');
+  lsDel('tokens');
+  lsDel('verifier');
 }
 
 async function refresh(clientId: string): Promise<Tokens> {
@@ -84,8 +106,8 @@ async function refresh(clientId: string): Promise<Tokens> {
 }
 
 export async function exchangeCode(code: string): Promise<Tokens> {
-  const verifier = localStorage.getItem('cuekeeper_verifier');
-  const clientId = localStorage.getItem('cuekeeper_client_id');
+  const verifier = lsGet('verifier');
+  const clientId = lsGet('client_id');
   if (!verifier || !clientId) throw new Error('falta el verificador PKCE');
   const body = new URLSearchParams({
     client_id: clientId,
@@ -104,7 +126,7 @@ export async function exchangeCode(code: string): Promise<Tokens> {
 }
 
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T | null> {
-  const clientId = localStorage.getItem('cuekeeper_client_id');
+  const clientId = lsGet('client_id');
   if (!clientId) throw new Error('sin client id');
   let tokens = loadTokens();
   if (!tokens) throw new Error('no has iniciado sesión');

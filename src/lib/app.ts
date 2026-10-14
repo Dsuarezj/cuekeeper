@@ -1,7 +1,7 @@
 // Lógica de la página: login → elegir playlist → fijar cortes → vigilar.
 
 import {
-  startLogin, exchangeCode, loadTokens, clearAll,
+  startLogin, exchangeCode, loadTokens, clearAll, lsGet, lsSet,
   getPlaylists, getPlaylistTracks, getRedirectUri,
 } from './spotify';
 import { startWatching, fmt, type Cut } from './watcher';
@@ -99,7 +99,7 @@ export async function boot(): Promise<void> {
   if (!loadTokens()) {
     show('setup');
     $('redirect-uri').textContent = getRedirectUri();
-    const saved = localStorage.getItem('cuekeeper_client_id');
+    const saved = lsGet('client_id');
     if (saved) ($('client-id') as HTMLInputElement).value = saved;
     return;
   }
@@ -115,7 +115,10 @@ export async function boot(): Promise<void> {
       const b = document.createElement('button');
       b.className = 'plist';
       const total = p.tracks?.total;
-      b.textContent = `${p.name ?? '(sin nombre)'}${total != null ? ` (${total})` : ''}`;
+      b.innerHTML =
+        `<span class="pname">${escapeHtml(p.name ?? '(sin nombre)')}</span>` +
+        (total != null ? `<span class="pcount">${total} temas</span>` : '') +
+        `<span class="pgo">›</span>`;
       b.addEventListener('click', () => loadCuts(p.id, p.name ?? 'playlist'));
       list.appendChild(b);
     }
@@ -128,43 +131,48 @@ export async function boot(): Promise<void> {
 async function loadCuts(playlistId: string, playlistName: string): Promise<void> {
   show('cuts');
   $('cuts-title').textContent = `Cortes · ${playlistName}`;
-  const tbody = $('cuts-body');
+  const list = $('cuts-body');
   const btnStart = $('btn-start') as HTMLButtonElement;
   const btnBack = $('btn-back') as HTMLButtonElement;
   // Estos botones tienen que funcionar siempre, también en la pantalla de error.
   btnBack.onclick = () => show('choose');
   btnStart.classList.add('hidden');
-  tbody.innerHTML = '<tr><td colspan="4">cargando temas…</td></tr>';
+  list.innerHTML = '<p class="hint">cargando temas…</p>';
   try {
     const data = await getPlaylistTracks(playlistId);
     const items = (data?.items ?? []).filter((i: any) => (i.item ?? i.track)?.id);
-    const saved = JSON.parse(localStorage.getItem(`cuekeeper_cuts_${playlistId}`) ?? '{}');
+    const saved = JSON.parse(lsGet(`cuts_${playlistId}`) ?? '{}');
 
-    tbody.innerHTML = '';
+    list.innerHTML = '';
     items.forEach((i: any, idx: number) => {
       const t = i.item ?? i.track; // /items usa "item"; se tolera el viejo "track"
       const artist = (t.artists ?? []).map((a: any) => a.name).join(', ');
       const g = saved[t.id] ?? guess(t.name);
-      const tr = document.createElement('tr');
-      tr.dataset.trackId = t.id;
-      tr.innerHTML = `
-        <td class="n">${idx + 1}</td>
-        <td><strong>${escapeHtml(t.name ?? '?')}</strong><br><span class="dim">${escapeHtml(artist)}</span></td>
-        <td><input type="number" min="0" inputmode="numeric" placeholder="0:00"
-             value="${g.start ?? ''}" data-k="start" aria-label="empieza en segundos"></td>
-        <td><input type="number" min="0" inputmode="numeric" placeholder="fin"
-             value="${g.end ?? ''}" data-k="end" aria-label="termina en segundos"></td>`;
-      tbody.appendChild(tr);
+      const card = document.createElement('div');
+      card.className = 'cut';
+      card.dataset.trackId = t.id;
+      card.innerHTML = `
+        <div class="cut-head"><span class="n">${idx + 1}</span>
+          <div><strong>${escapeHtml(t.name ?? '?')}</strong><br>
+          <span class="dim">${escapeHtml(artist)}</span></div>
+        </div>
+        <div class="cut-times">
+          <label>Empieza (s)<input type="number" min="0" inputmode="numeric" placeholder="0:00"
+            value="${g.start ?? ''}" data-k="start" aria-label="empieza en segundos"></label>
+          <label>Termina (s)<input type="number" min="0" inputmode="numeric" placeholder="fin"
+            value="${g.end ?? ''}" data-k="end" aria-label="termina en segundos"></label>
+        </div>`;
+      list.appendChild(card);
     });
 
     btnStart.classList.remove('hidden');
     btnStart.onclick = () => {
       const cuts: Cut[] = [];
       const store: Record<string, { start: number | null; end: number | null }> = {};
-      tbody.querySelectorAll('tr[data-track-id]').forEach((tr) => {
-        const id = (tr as HTMLElement).dataset.trackId!;
-        const sv = (tr.querySelector('input[data-k="start"]') as HTMLInputElement).value;
-        const ev = (tr.querySelector('input[data-k="end"]') as HTMLInputElement).value;
+      list.querySelectorAll('[data-track-id]').forEach((card) => {
+        const id = (card as HTMLElement).dataset.trackId!;
+        const sv = (card.querySelector('input[data-k="start"]') as HTMLInputElement).value;
+        const ev = (card.querySelector('input[data-k="end"]') as HTMLInputElement).value;
         const start = sv === '' ? null : Math.max(0, Number(sv));
         const end = ev === '' ? null : Math.max(0, Number(ev));
         store[id] = { start, end };
@@ -176,7 +184,7 @@ async function loadCuts(playlistId: string, playlistName: string): Promise<void>
           });
         }
       });
-      localStorage.setItem(`cuekeeper_cuts_${playlistId}`, JSON.stringify(store));
+      lsSet(`cuts_${playlistId}`, JSON.stringify(store));
       startNight(cuts);
     };
   } catch (e: any) {
@@ -184,7 +192,7 @@ async function loadCuts(playlistId: string, playlistName: string): Promise<void>
     const hint = msg.includes('403')
       ? ' (¿sin permiso? Pulsa «← otra playlist» → «Desconectar» y vuelve a conectar: Spotify emitirá un token nuevo con todos los permisos.)'
       : '';
-    tbody.innerHTML = `<tr><td colspan="4">Error: ${escapeHtml(msg)}${escapeHtml(hint)}</td></tr>`;
+    list.innerHTML = `<p class="msg">Error: ${escapeHtml(msg)}${escapeHtml(hint)}</p>`;
   }
 }
 
