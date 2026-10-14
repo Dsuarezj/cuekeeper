@@ -157,10 +157,11 @@ async function loadCuts(playlistId: string, playlistName: string): Promise<void>
           <span class="dim">${escapeHtml(artist)}</span></div>
         </div>
         <div class="cut-times">
-          <label>Empieza (s)<input type="number" min="0" inputmode="numeric" placeholder="0:00"
-            value="${g.start ?? ''}" data-k="start" aria-label="empieza en segundos"></label>
-          <label>Termina (s)<input type="number" min="0" inputmode="numeric" placeholder="fin"
-            value="${g.end ?? ''}" data-k="end" aria-label="termina en segundos"></label>
+          <label><span>Inicio</span><input type="number" min="0" inputmode="decimal" placeholder="0"
+            value="${g.start ?? ''}" data-k="start" aria-label="inicio en segundos"></label>
+          <span class="cut-arrow">→</span>
+          <label><span>Fin</span><input type="number" min="0" inputmode="decimal" placeholder="fin"
+            value="${g.end ?? ''}" data-k="end" aria-label="fin en segundos"></label>
         </div>`;
       list.appendChild(card);
     });
