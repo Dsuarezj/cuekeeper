@@ -1,24 +1,24 @@
-# Cuekeeper — Fly.io
-# Si el nombre "cuekeeper" está ocupado, cámbialo aquí (y en la Redirect URI de Spotify).
-app = "cuekeeper"
-primary_region = "lhr" # Londres: ahí es la noche del 14 de noviembre
+# fly.toml app configuration file generated for cuekeeper on 2026-10-14T01:40:56Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'cuekeeper'
+primary_region = 'ams'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
+
+[[mounts]]
+  source = 'ero_cuts_data'
+  destination = '/data'
 
 [http_service]
   internal_port = 8080
   force_https = true
-  # ¡Importante! La máquina NO debe dormirse: el vigilante hace polling cada segundo.
-  auto_stop_machines = false
+  auto_stop_machines = 'off'
   auto_start_machines = true
   min_machines_running = 1
 
-# Volumen para tokens + estado (así sobrevive a reinicios y se reanuda solo).
-# Crear con: fly volumes create ero_cuts_data --size 1 --region lhr
-[[mounts]]
-  source = "ero_cuts_data"
-  destination = "/data"
-
 [[vm]]
-  size = "shared-cpu-1x"
+  size = 'shared-cpu-1x'
