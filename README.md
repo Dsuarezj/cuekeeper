@@ -26,7 +26,7 @@ pestaña abierta.
 |---|---|---|
 | En la Ciudad de la Furia | — | 375 s (6:15) |
 | Levensgenieter | — | 315 s (5:15) |
-| Ass Like That | 110 s (1:50) | 150 s (2:30) |
+| Ass Like That | 0 s (0:00) | 38.5 s (0:38.5) |
 | Roads | — | 280 s (4:40) |
 
 Se pueden ajustar por tema en la propia página; se guardan en el navegador.

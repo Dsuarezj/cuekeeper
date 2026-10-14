@@ -40,7 +40,7 @@ function guess(name: string): { start: number | null; end: number | null } {
   const n = name.toLowerCase();
   if (n.includes('ciudad de la furia')) return { start: null, end: 375 }; // 6:15
   if (n.includes('levensgenieter')) return { start: null, end: 315 }; // 5:15
-  if (n.includes('ass like that')) return { start: 110, end: 150 }; // 1:50 → 2:30
+  if (n.includes('ass like that')) return { start: 0, end: 38.5 }; // 0:00 → 0:38.5
   if (n.includes('roads')) return { start: null, end: 280 }; // 4:40
   return { start: null, end: null };
 }
