@@ -35,7 +35,7 @@ function log(msg: string): void {
   while (el.children.length > 30) el.lastChild?.remove();
 }
 
-/** Cortes sugeridos por nombre de tema (los de la noche Ero). */
+/** Cortes sugeridos por nombre de tema (configuración por defecto). */
 function guess(name: string): { start: number | null; end: number | null } {
   const n = name.toLowerCase();
   if (n.includes('ciudad de la furia')) return { start: null, end: 375 }; // 6:15
@@ -99,7 +99,7 @@ export async function boot(): Promise<void> {
   if (!loadTokens()) {
     show('setup');
     $('redirect-uri').textContent = getRedirectUri();
-    const saved = localStorage.getItem('ero_client_id');
+    const saved = localStorage.getItem('cuekeeper_client_id');
     if (saved) ($('client-id') as HTMLInputElement).value = saved;
     return;
   }
@@ -138,7 +138,7 @@ async function loadCuts(playlistId: string, playlistName: string): Promise<void>
   try {
     const data = await getPlaylistTracks(playlistId);
     const items = (data?.items ?? []).filter((i: any) => (i.item ?? i.track)?.id);
-    const saved = JSON.parse(localStorage.getItem(`ero_cuts_${playlistId}`) ?? '{}');
+    const saved = JSON.parse(localStorage.getItem(`cuekeeper_cuts_${playlistId}`) ?? '{}');
 
     tbody.innerHTML = '';
     items.forEach((i: any, idx: number) => {
@@ -176,7 +176,7 @@ async function loadCuts(playlistId: string, playlistName: string): Promise<void>
           });
         }
       });
-      localStorage.setItem(`ero_cuts_${playlistId}`, JSON.stringify(store));
+      localStorage.setItem(`cuekeeper_cuts_${playlistId}`, JSON.stringify(store));
       startNight(cuts);
     };
   } catch (e: any) {

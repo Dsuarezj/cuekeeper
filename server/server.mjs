@@ -113,7 +113,7 @@ async function spotify(p, options = {}) {
 }
 
 // ---------------- cortes ----------------
-// Segundos donde empieza/termina cada tema (los de la noche Ero).
+// Segundos donde empieza/termina cada tema (configuración por defecto).
 function guessCuts(name) {
   const n = (name || '').toLowerCase();
   if (n.includes('ciudad de la furia')) return { startS: null, endS: 375 }; // 6:15

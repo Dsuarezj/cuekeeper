@@ -1,7 +1,7 @@
 {
-  "name": "ero-cuts",
+  "name": "cuekeeper-web",
   "version": "1.0.0",
-  "description": "Vigilante de cortes para la playlist Ero (Spotify Mix pone la m\u00fasica, esta app pone los cortes)",
+  "description": "Versión web archivada de Cuekeeper (sustituida por el backend en server/)",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",

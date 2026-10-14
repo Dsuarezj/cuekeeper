@@ -32,8 +32,8 @@ export function getRedirectUri(): string {
 export async function startLogin(clientId: string): Promise<void> {
   const verifier = rand(128);
   const ch = await challenge(verifier);
-  localStorage.setItem('ero_verifier', verifier);
-  localStorage.setItem('ero_client_id', clientId);
+  localStorage.setItem('cuekeeper_verifier', verifier);
+  localStorage.setItem('cuekeeper_client_id', clientId);
   const params = new URLSearchParams({
     client_id: clientId,
     response_type: 'code',
@@ -52,18 +52,18 @@ function saveTokens(j: any): Tokens {
     refresh_token: j.refresh_token ?? prev?.refresh_token ?? '',
     expires_at: Date.now() + (j.expires_in ?? 3600) * 1000,
   };
-  localStorage.setItem('ero_tokens', JSON.stringify(t));
+  localStorage.setItem('cuekeeper_tokens', JSON.stringify(t));
   return t;
 }
 
 export function loadTokens(): Tokens | null {
-  const raw = localStorage.getItem('ero_tokens');
+  const raw = localStorage.getItem('cuekeeper_tokens');
   return raw ? (JSON.parse(raw) as Tokens) : null;
 }
 
 export function clearAll(): void {
-  localStorage.removeItem('ero_tokens');
-  localStorage.removeItem('ero_verifier');
+  localStorage.removeItem('cuekeeper_tokens');
+  localStorage.removeItem('cuekeeper_verifier');
 }
 
 async function refresh(clientId: string): Promise<Tokens> {
@@ -84,8 +84,8 @@ async function refresh(clientId: string): Promise<Tokens> {
 }
 
 export async function exchangeCode(code: string): Promise<Tokens> {
-  const verifier = localStorage.getItem('ero_verifier');
-  const clientId = localStorage.getItem('ero_client_id');
+  const verifier = localStorage.getItem('cuekeeper_verifier');
+  const clientId = localStorage.getItem('cuekeeper_client_id');
   if (!verifier || !clientId) throw new Error('falta el verificador PKCE');
   const body = new URLSearchParams({
     client_id: clientId,
@@ -104,7 +104,7 @@ export async function exchangeCode(code: string): Promise<Tokens> {
 }
 
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T | null> {
-  const clientId = localStorage.getItem('ero_client_id');
+  const clientId = localStorage.getItem('cuekeeper_client_id');
   if (!clientId) throw new Error('sin client id');
   let tokens = loadTokens();
   if (!tokens) throw new Error('no has iniciado sesión');
