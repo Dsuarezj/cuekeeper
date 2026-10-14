@@ -4,6 +4,7 @@ app = "cuekeeper"
 primary_region = "lhr" # Londres: ahí es la noche del 14 de noviembre
 
 [build]
+  dockerfile = "Dockerfile"
 
 [http_service]
   internal_port = 8080
