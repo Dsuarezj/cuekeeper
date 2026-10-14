@@ -175,7 +175,11 @@ async function loadCuts(playlistId: string, playlistName: string): Promise<void>
       startNight(cuts);
     };
   } catch (e: any) {
-    tbody.innerHTML = `<tr><td colspan="4">Error: ${escapeHtml(e.message)}</td></tr>`;
+    const msg: string = e.message ?? String(e);
+    const hint = msg.includes('403')
+      ? ' (¿sin permiso? Pulsa «← otra playlist» → «Desconectar» y vuelve a conectar: Spotify emitirá un token nuevo con todos los permisos.)'
+      : '';
+    tbody.innerHTML = `<tr><td colspan="4">Error: ${escapeHtml(msg)}${escapeHtml(hint)}</td></tr>`;
   }
 }
 

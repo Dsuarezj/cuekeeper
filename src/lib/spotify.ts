@@ -139,8 +139,4 @@ export const seek = (ms: number) =>
 export const nextTrack = () => api('/me/player/next', { method: 'POST' });
 export const getPlaylists = () => api<any>('/me/playlists?limit=50');
 export const getPlaylistTracks = (id: string) =>
-  api<any>(
-    `/playlists/${id}/tracks?limit=100&fields=${encodeURIComponent(
-      'items(track(id,name,artists(name),duration_ms))'
-    )}`
-  );
+  api<any>(`/playlists/${id}/tracks?limit=100`);
