@@ -1,8 +1,8 @@
-# Ero · cortes
+# Cuekeeper
 
 Spotify pone la música y las transiciones (Mix); esto pone los cortes quirúrgicos
-que el editor de Spotify no permite: Ciudad de la Furia → 6:15, Levensgenieter →
-5:15, Ass Like That → 1:50–2:30, Roads → 4:40.
+que el editor de Spotify no permite (p. ej. en la playlist *Ero*: Ciudad de la
+Furia → 6:15, Levensgenieter → 5:15, Ass Like That → 1:50–2:30, Roads → 4:40).
 
 ## El vigilante (activo): `server/` en Fly.io
 
@@ -53,7 +53,7 @@ navegador con la página en primer plano) siguen en la raíz del repo
 (`src/`, `astro.config.mjs`, `package.json`…), pero ya no se despliegan:
 el backend la sustituye porque funciona con el móvil bloqueado.
 
-### Cortes preconfigurados
+### Cortes preconfigurados (ejemplo: playlist *Ero*)
 
 | Tema | Empieza | Termina |
 |---|---|---|

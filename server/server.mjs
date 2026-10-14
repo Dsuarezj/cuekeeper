@@ -1,4 +1,4 @@
-// Ero · cortes — backend vigilante (Fly.io, always-on).
+// Cuekeeper — backend vigilante (Fly.io, always-on).
 //
 // Spotify pone la música y las transiciones (Mix); este servicio pone los
 // cortes: pregunta a la API cada segundo en qué punto va la canción y
@@ -142,7 +142,7 @@ function logEvent(msg) {
   const line = `${new Date().toLocaleTimeString('es-ES', { hour12: false })} — ${msg}`;
   watcher.events.unshift(line);
   watcher.events = watcher.events.slice(0, 50);
-  console.log('[ero]', line);
+  console.log('[cuekeeper]', line);
 }
 
 function persistState() {
@@ -335,7 +335,7 @@ app.get('/api/status', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`[ero] escuchando en :${PORT} · base=${BASE_URL}`);
+  console.log(`[cuekeeper] escuchando en :${PORT} · base=${BASE_URL}`);
   // Si la máquina se reinició vigilando, se reanuda sola.
   const saved = loadJson(STATE_FILE, null);
   if (saved?.watching && tokens) {

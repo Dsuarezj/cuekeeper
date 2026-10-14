@@ -1,6 +1,6 @@
-# Ero · cortes — Fly.io
-# Si el nombre "ero-cuts" está ocupado, cámbialo aquí (y en la Redirect URI de Spotify).
-app = "ero-cuts"
+# Cuekeeper — Fly.io
+# Si el nombre "cuekeeper" está ocupado, cámbialo aquí (y en la Redirect URI de Spotify).
+app = "cuekeeper"
 primary_region = "lhr" # Londres: ahí es la noche del 14 de noviembre
 
 [build]
