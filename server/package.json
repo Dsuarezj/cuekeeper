@@ -1,1 +1,0 @@
-{"dependencies":{"express":"^4.21.2"},"description":"Cuekeeper: vigilante de cortes para Spotify, backend always-on (Fly.io).","name":"cuekeeper-server","private":true,"scripts":{"start":"node server.mjs"},"type":"module","version":"1.0.0"}
