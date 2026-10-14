@@ -36,6 +36,11 @@ Se pueden ajustar por tema en la propia página; se guardan en el navegador.
 - Scopes: `user-read-playback-state`, `user-modify-playback-state`,
   `playlist-read-private`.
 - Precisión de corte: ±1 s (polling cada segundo a `/me/player`).
+- Fundido de volumen alrededor de los cortes: ~2,5 s de atenuación antes de
+  cada corte de salida (y fundido corto en los saltos de entrada). La API no
+  ofrece crossfade, así que se baja el volumen por pasos con
+  `PUT /me/player/volume` y se restaura después. Si el dispositivo no admite
+  volumen por API, se hace el corte seco de siempre.
 - Sin telemetría: la app no envía ninguna; la de Astro está desactivada
   (`astro telemetry disable`, `ASTRO_TELEMETRY_DISABLED=1`).
 - Desde la migración de la API de Spotify (feb-2026): los temas de una
