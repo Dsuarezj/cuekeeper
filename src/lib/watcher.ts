@@ -1,7 +1,7 @@
 // El "vigilante": pregunta a Spotify cada segundo en qué punto va la canción
 // y dispara los cortes (seek al inicio / salto al final) cuando toca.
 
-import { getState, seek, nextTrack, setVolume } from './spotify';
+import { getState, seek, nextTrack } from './spotify';
 
 export interface Cut {
   trackId: string;
@@ -36,29 +36,6 @@ export function startWatching(cuts: Cut[], cb: WatchCallbacks): () => void {
   let seekDone = false;
   let cutDone = false;
   let consecutiveErrors = 0;
-  // Fundido de volumen alrededor de los cortes (la API no tiene crossfade).
-  const FADE_MS = 2500;
-  let fadeState: 'idle' | 'out' | 'in' = 'idle';
-  let fadeGen = 0;
-  let baseVolume: number | null = null;
-  let volumeOk = true;
-
-  const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-
-  /** Sube o baja el volumen por pasos. Si el dispositivo no lo admite, desactiva el fundido. */
-  async function fadeTo(from: number, to: number, ms: number): Promise<void> {
-    const myGen = ++fadeGen;
-    const steps = Math.max(2, Math.round(ms / 500));
-    try {
-      for (let i = 1; i <= steps; i++) {
-        if (stopped || myGen !== fadeGen) return;
-        await setVolume(from + ((to - from) * i) / steps);
-        await sleep(ms / steps);
-      }
-    } catch {
-      volumeOk = false;
-    }
-  }
 
   const cutFor = (id: string | null): Cut | null =>
     cuts.find((c) => c.trackId === id) ?? null;
@@ -81,65 +58,29 @@ export function startWatching(cuts: Cut[], cb: WatchCallbacks): () => void {
         lastTrackId = id;
         seekDone = false;
         cutDone = false;
-        // Si habíamos atenuado y el tema cambió solo (p. ej. el Mix de Spotify
-        // avanzó), restauramos el volumen en vez de dejarlo bajo.
-        if (fadeState === 'out') {
-          fadeState = 'idle';
-          fadeGen++;
-          if (baseVolume != null) setVolume(baseVolume).catch(() => {});
-          baseVolume = null;
-        }
       }
 
       const cut = cutFor(id);
       const name: string = s.item.name ?? '?';
 
       // Corte de entrada: si el tema acaba de empezar y tiene inicio fijado, saltar ahí.
-      // Con fundido: atenuar → saltar → recuperar, para que no sea un golpe seco.
       if (cut?.startMs != null && !seekDone && progress < cut.startMs) {
+        await seek(cut.startMs);
         seekDone = true;
-        const vol: number | null = s.device?.volume_percent ?? null;
-        if (volumeOk && vol != null) {
-          baseVolume = vol;
-          fadeState = 'out';
-          await fadeTo(vol, 0, 700);
-          await seek(cut.startMs);
-          fadeState = 'in';
-          cb.onEvent(`⏩ «${name}» empieza en ${fmt(cut.startMs)}`);
-          await fadeTo(0, vol, 700);
-          fadeState = 'idle';
-          baseVolume = null;
-        } else {
-          await seek(cut.startMs);
-          cb.onEvent(`⏩ «${name}» empieza en ${fmt(cut.startMs)}`);
-        }
+        cb.onEvent(`⏩ «${name}» empieza en ${fmt(cut.startMs)}`);
       }
 
       let nextCutInMs: number | null = null;
       let nextCutLabel: string | null = null;
 
-      // Corte de salida: fundido previo y, al llegar al punto, siguiente canción.
+      // Corte de salida: al llegar al punto, siguiente canción.
       if (cut?.endMs != null && !cutDone) {
-        const vol: number | null = s.device?.volume_percent ?? null;
-        if (fadeState === 'idle' && volumeOk && vol != null && progress >= cut.endMs - FADE_MS) {
-          baseVolume = vol;
-          fadeState = 'out';
-          cb.onEvent(`🔉 fundido de salida…`);
-          void fadeTo(vol, 0, Math.max(500, cut.endMs - progress));
-        }
         nextCutInMs = cut.endMs - progress;
-        nextCutLabel = fadeState === 'out' ? `fundido de «${name}»` : `corte de «${name}»`;
+        nextCutLabel = `corte de «${name}»`;
         if (progress >= cut.endMs) {
           cutDone = true;
           await nextTrack();
           cb.onEvent(`✂️ «${name}» cortada en ${fmt(cut.endMs)} → siguiente`);
-          if (fadeState === 'out' && volumeOk && baseVolume != null) {
-            const bv = baseVolume;
-            fadeState = 'in';
-            void fadeTo(0, bv, FADE_MS).then(() => {
-              if (fadeState === 'in') { fadeState = 'idle'; baseVolume = null; }
-            });
-          }
         }
       }
 
@@ -170,12 +111,5 @@ export function startWatching(cuts: Cut[], cb: WatchCallbacks): () => void {
   return () => {
     stopped = true;
     clearInterval(timer);
-    // No dejar el volumen atenuado al detener.
-    fadeGen++;
-    if (fadeState !== 'idle' && baseVolume != null) {
-      setVolume(baseVolume).catch(() => {});
-    }
-    fadeState = 'idle';
-    baseVolume = null;
   };
 }
