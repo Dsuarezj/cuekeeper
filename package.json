@@ -1,0 +1,17 @@
+{
+  "name": "ero-cuts",
+  "version": "1.0.0",
+  "description": "Vigilante de cortes para la playlist Ero (Spotify Mix pone la m\u00fasica, esta app pone los cortes)",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@astrojs/vercel": "^11.0.14",
+    "astro": "^7.3.8"
+  }
+}

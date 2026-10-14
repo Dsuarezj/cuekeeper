@@ -1,0 +1,143 @@
+---
+---
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d0d12" />
+  <title>Ero · cortes</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: #0d0d12; color: #f2f2f5;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      min-height: 100dvh; padding: 20px 16px 48px;
+    }
+    main { max-width: 640px; margin: 0 auto; }
+    h1 { font-size: 1.4rem; margin: 0 0 4px; letter-spacing: .02em; }
+    h2 { font-size: 1.05rem; margin: 18px 0 8px; }
+    p.sub { color: #a7a7b3; margin: 0 0 18px; font-size: .95rem; }
+    .hidden { display: none !important; }
+    .card {
+      background: #17171e; border: 1px solid #26262f; border-radius: 14px;
+      padding: 18px; margin-bottom: 14px;
+    }
+    label { display: block; font-size: .85rem; color: #a7a7b3; margin: 10px 0 6px; }
+    input[type="text"], input[type="number"] {
+      width: 100%; background: #0d0d12; border: 1px solid #33333e; color: #f2f2f5;
+      border-radius: 10px; padding: 12px; font-size: 1rem;
+    }
+    button {
+      background: #7c5cff; color: #fff; border: 0; border-radius: 12px;
+      padding: 14px 18px; font-size: 1rem; font-weight: 600; cursor: pointer;
+      width: 100%; margin-top: 12px;
+    }
+    button.ghost { background: #26262f; }
+    button.plist { background: #1d1d26; text-align: left; margin-top: 8px; }
+    code.uri {
+      display: block; background: #0d0d12; border: 1px dashed #44444f;
+      border-radius: 8px; padding: 10px; margin: 8px 0; word-break: break-all;
+      font-size: .85rem; color: #c9b8ff;
+    }
+    .msg { min-height: 1.4em; color: #ffb3b3; font-size: .9rem; margin-top: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    th { text-align: left; color: #a7a7b3; font-weight: 600; font-size: .78rem;
+         padding: 6px 4px; border-bottom: 1px solid #26262f; }
+    td { padding: 8px 4px; border-bottom: 1px solid #1d1d26; vertical-align: middle; }
+    td.n { color: #a7a7b3; width: 2em; }
+    td input { padding: 8px; font-size: .95rem; }
+    .dim { color: #a7a7b3; font-size: .82rem; }
+    #now-title { font-size: 1.25rem; margin: 0; }
+    #now-artist { color: #a7a7b3; margin: 2px 0 10px; }
+    .pbar { height: 8px; background: #26262f; border-radius: 99px; overflow: hidden; }
+    #progress { height: 100%; width: 0%; background: #7c5cff; border-radius: 99px;
+                transition: width .9s linear; }
+    #now-time { font-size: .82rem; color: #a7a7b3; margin-top: 6px; }
+    #countdown { font-size: 1.05rem; margin: 12px 0 0; color: #ffd479; font-weight: 600; }
+    .dot { display: inline-block; width: 10px; height: 10px; border-radius: 99px;
+           background: #51e08c; margin-right: 8px; }
+    .dot.off { background: #55555f; }
+    #log { list-style: none; padding: 0; margin: 12px 0 0; font-size: .85rem; }
+    #log li { padding: 6px 0; border-bottom: 1px solid #1d1d26; color: #cfcfda; }
+    .hint { font-size: .85rem; color: #a7a7b3; }
+    ol.hint { padding-left: 20px; }
+    ol.hint li { margin: 6px 0; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>✂️ Ero · cortes</h1>
+  <p class="sub">Spotify pone la música y las transiciones; esta página pone los cortes.</p>
+
+  <!-- 1 · conectar -->
+  <section id="view-setup" class="hidden">
+    <div class="card">
+      <h2>1 · Conecta tu Spotify</h2>
+      <p class="hint">Necesitas un <strong>Client ID</strong> (gratis, 2 minutos):</p>
+      <ol class="hint">
+        <li>Entra en <strong>developer.spotify.com/dashboard</strong> e inicia sesión.</li>
+        <li>Create app → ponle el nombre que quieras.</li>
+        <li>En <strong>Settings → Redirect URIs</strong> añade esta URL tal cual:</li>
+      </ol>
+      <code class="uri" id="redirect-uri">…</code>
+      <p class="hint">Guarda los cambios y copia el <strong>Client ID</strong> aquí:</p>
+      <label for="client-id">Client ID</label>
+      <input type="text" id="client-id" placeholder="p. ej. a1b2c3d4…" autocomplete="off" />
+      <button id="btn-connect">Conectar con Spotify</button>
+      <p class="msg" id="setup-msg"></p>
+    </div>
+  </section>
+
+  <!-- 2 · elegir playlist -->
+  <section id="view-choose" class="hidden">
+    <div class="card">
+      <h2>2 · Elige la playlist</h2>
+      <div id="playlist-list"></div>
+      <p class="msg" id="choose-msg"></p>
+      <button id="btn-logout" class="ghost">Desconectar</button>
+    </div>
+  </section>
+
+  <!-- 3 · fijar cortes -->
+  <section id="view-cuts" class="hidden">
+    <div class="card">
+      <h2 id="cuts-title">3 · Cortes</h2>
+      <p class="hint">Segundos donde <strong>empieza</strong> y donde <strong>termina</strong> cada tema.
+      Vacío = se reproduce entero. Los 4 cortes de la noche vienen pre-rellenados.</p>
+      <table>
+        <thead><tr><th>#</th><th>Tema</th><th>Empieza&nbsp;(s)</th><th>Termina&nbsp;(s)</th></tr></thead>
+        <tbody id="cuts-body"></tbody>
+      </table>
+      <button id="btn-start">▶ Empezar la noche</button>
+      <button id="btn-back" class="ghost">← otra playlist</button>
+    </div>
+  </section>
+
+  <!-- 4 · vigilando -->
+  <section id="view-watch" class="hidden">
+    <div class="card">
+      <h2><span class="dot" id="live-dot"></span>Vigilando</h2>
+      <p id="now-title">—</p>
+      <p id="now-artist">esperando reproducción…</p>
+      <div class="pbar"><div id="progress"></div></div>
+      <p id="now-time"></p>
+      <p id="countdown" class="hidden"></p>
+      <p class="hint">Deja esta página abierta en primer plano y el móvil enchufado.
+      Dale play a la playlist en Spotify con el Mix activado y olvídate.</p>
+      <button id="btn-stop" class="ghost">⏹ Detener</button>
+    </div>
+    <div class="card">
+      <h2>Registro</h2>
+      <ul id="log"></ul>
+    </div>
+  </section>
+</main>
+
+<script>
+  import { boot } from '../lib/app';
+  boot();
+</script>
+</body>
+</html>

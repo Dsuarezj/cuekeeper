@@ -1,0 +1,1 @@
+{"compilerOptions":{"types":["astro/client"]},"extends":"astro/tsconfigs/strict"}
